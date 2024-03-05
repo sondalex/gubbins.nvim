@@ -90,30 +90,30 @@ local hide_out_of_frame_window = function(frame_win, frame_buf, win, opts)
         return nil, nil
     end
     local lines_count = vim.api.nvim_buf_line_count(frame_buf)
-
     local penalty = 0
-    --[[vim.api.nvim_create_autocmd("TextChanged", {
-        --
-        buffer = frame_buf,
 
-        once = false,
-        callback = function()
-            print("lines_count " .. lines_count)
-            lines_count, penalty = text_changed_callback(lines_count, penalty)
-        end,
-    })--]]
-    local penalty2 = 0
-
-    local lines_count2 = vim.api.nvim_buf_line_count(frame_buf)
-    vim.api.nvim_create_autocmd("TextChangedI", {
-
+    vim.api.nvim_create_autocmd("TextChanged", {
         buffer = frame_buf,
         once = false,
-
         callback = function()
             if vim.api.nvim_win_is_valid(win) then
-                print("lines_count2 " .. lines_count2)
-                lines_count2, penalty2 = text_changed_callback(lines_count2, penalty2)
+                print("lines_count " .. lines_count)
+                lines_count, penalty = text_changed_callback(lines_count, penalty)
+            end
+        end,
+    })
+    local penalty2 = 0
+
+    -- local lines_count2 = vim.api.nvim_buf_line_count(frame_buf)
+    --
+
+    vim.api.nvim_create_autocmd("TextChangedI", {
+        buffer = frame_buf,
+        once = false,
+        callback = function()
+            if vim.api.nvim_win_is_valid(win) then
+                print("lines_count2 " .. lines_count)
+                lines_count, penalty = text_changed_callback(lines_count, penalty)
             end
         end,
     })
