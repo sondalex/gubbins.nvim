@@ -10,11 +10,92 @@ local merge_table = function(tbl1, tbl2)
     end
 end
 
+local out_of_frame_factory = function(frame_win, win, opts)
+    return function()
+        print("Called")
+        if vim.api.nvim_win_is_valid(win) then
+            local bottom_limit = vim.fn.line("w$", frame_win)
+            local top_limit = vim.fn.line("w0", frame_win)
+
+            if top_limit > opts.config.bufpos[1] + 2 or bottom_limit < opts.config.bufpos[1] + 1 + opts.height then
+                print("OUT oF FRAME")
+                if opts.border ~= "none" then
+                    opts.config.border = "none"
+                    vim.api.nvim_win_set_config(win, opts.config)
+                end
+
+                vim.api.nvim_win_set_height(win, 0)
+                vim.api.nvim_win_set_width(win, 0)
+            else
+                local current_width = vim.api.nvim_win_get_width(win)
+                local current_height = vim.api.nvim_win_get_height(win)
+                print("PASSED")
+                if current_height ~= opts.height or current_width ~= opts.width then
+                    print("PASSED2")
+                    if opts.config.border ~= opts.border then
+                        print("SETTING BORDER")
+                        opts.config.border = opts.border
+                        vim.api.nvim_win_set_config(win, opts.config)
+                    end
+
+                    vim.api.nvim_win_set_width(win, opts.width)
+                    vim.api.nvim_win_set_height(win, opts.height)
+                end
+            end
+        end
+    end
+end
+
+---@param opts
+--- * previous_lines
+--- * bufpos
+--- * penalty
+--- * config
+local text_changed_factory = function(frame_win, frame_buf, win, opts)
+    return function()
+        if opts.penalty == nil then
+            opts.penalty = 0
+        end
+        if vim.api.nvim_win_is_valid(win) then
+            local cursor_line = vim.api.nvim_win_get_cursor(frame_win)[1]
+            local current_lines = vim.api.nvim_buf_line_count(frame_buf)
+            print(current_lines, opts.previous_lines)
+
+            if current_lines ~= opts.previous_lines then
+                local offset = current_lines - opts.previous_lines
+                if offset < 0 then
+                    if (cursor_line - 1) <= opts.config.bufpos[1] + offset + 1 then
+                        opts.config.bufpos = { opts.config.bufpos[1] + offset - opts.penalty, opts.config.bufpos[2] }
+
+                        vim.api.nvim_win_set_config(win, opts.config)
+                        opts.penalty = 0
+                    else
+                        opts.penalty = opts.penalty + offset + 1
+                    end
+                    opts.previous_lines = current_lines
+                end
+                if offset > 0 then
+                    if (cursor_line - 1) < opts.config.bufpos[1] + offset + 1 then
+                        opts.config.bufpos = { opts.config.bufpos[1] + offset - opts.penalty, opts.config.bufpos[2] }
+
+                        vim.api.nvim_win_set_config(win, opts.config)
+                        opts.penalty = 0
+                    else
+                        opts.penalty = opts.penalty + offset - 1
+                    end
+                    opts.previous_lines = current_lines
+                end
+            end
+            return opts.previous_lines, opts.penalty
+        end
+        return nil, nil
+    end
+end
+
 --- @param frame_win number The main window id
 --- @param win number The floating window id
 --- @param frame_buf number The buffer of the main window, on which scroll event should be listened on
 local hide_out_of_frame_window = function(frame_win, frame_buf, win, opts)
-    local bufpos = opts.bufpos
     local height = opts.height
     local width = opts.width
 
@@ -23,77 +104,12 @@ local hide_out_of_frame_window = function(frame_win, frame_buf, win, opts)
     vim.api.nvim_create_autocmd("WinScrolled", {
         buffer = frame_buf,
         once = false,
-        callback = function()
-            if vim.api.nvim_win_is_valid(win) then
-                local bottom_limit = vim.fn.line("w$", frame_win)
-                local top_limit = vim.fn.line("w0", frame_win)
-                if top_limit > bufpos[1] + 2 or bottom_limit < bufpos[1] + 1 + height then
-                    if border ~= "none" then
-                        config.border = "none"
-                        vim.api.nvim_win_set_config(win, config)
-                    end
-                    vim.api.nvim_win_set_height(win, 0)
-                    vim.api.nvim_win_set_width(win, 0)
-                else
-                    local current_width = vim.api.nvim_win_get_width(win)
-                    local current_height = vim.api.nvim_win_get_height(win)
-                    if current_height ~= height or current_width ~= width then
-                        if config.border ~= border then
-                            config.border = border
-                            vim.api.nvim_win_set_config(win, config)
-                        end
-
-                        vim.api.nvim_win_set_width(win, width)
-                        vim.api.nvim_win_set_height(win, height)
-                    end
-                end
-            end
-        end,
+        callback = out_of_frame_factory(
+            frame_win,
+            win,
+            { height = height, width = width, config = config, border = border }
+        ),
     })
-
-    -- added section
-    --
-
-    local text_changed_callback = function(previous_lines, penalty)
-        if penalty == nil then
-            penalty = 0
-        end
-        if vim.api.nvim_win_is_valid(win) then
-            local cursor_line = vim.api.nvim_win_get_cursor(frame_win)[1]
-            local current_lines = vim.api.nvim_buf_line_count(frame_buf)
-            print(current_lines, previous_lines)
-
-            if current_lines ~= previous_lines then
-                local offset = current_lines - previous_lines
-                if offset < 0 then
-                    if (cursor_line - 1) <= config.bufpos[1] + offset + 1 then
-                        config.bufpos = { config.bufpos[1] + offset - penalty, bufpos[2] }
-
-                        vim.api.nvim_win_set_config(win, config)
-                        penalty = 0
-                    else
-                        penalty = penalty + offset + 1
-                    end
-                    previous_lines = current_lines
-                end
-                if offset > 0 then
-                    if (cursor_line - 1) < config.bufpos[1] + offset + 1 then
-                        config.bufpos = { config.bufpos[1] + offset - penalty, bufpos[2] }
-
-                        vim.api.nvim_win_set_config(win, config)
-                        penalty = 0
-                    else
-                        penalty = penalty + offset - 1
-                    end
-                    previous_lines = current_lines
-                end
-            end
-
-            return previous_lines, penalty
-        end
-        return nil, nil
-    end
-
     local lines_count = vim.api.nvim_buf_line_count(frame_buf)
     local penalty = 0
     vim.api.nvim_create_autocmd("TextChanged", {
@@ -102,27 +118,32 @@ local hide_out_of_frame_window = function(frame_win, frame_buf, win, opts)
         callback = function()
             print("TextChanged triggered")
             if vim.api.nvim_win_is_valid(win) then
-                lines_count, penalty = text_changed_callback(lines_count, penalty)
+                lines_count, penalty = text_changed_factory(
+                    frame_win,
+                    frame_buf,
+                    win,
+                    { penalty = penalty, previous_lines = lines_count, config = config }
+                )()
             end
+
+            --out_of_frame_factory(frame_win, win, { height = height, width = width, config = config, border = border })()
         end,
     })
-    local penalty2 = 0
 
-    -- local lines_count2 = vim.api.nvim_buf_line_count(frame_buf)
-    --
-    --
-    --
-    --
-    --
-    --
     vim.api.nvim_create_autocmd("TextChangedI", {
         buffer = frame_buf,
         once = false,
         callback = function()
             print("TextChangedI triggered")
             if vim.api.nvim_win_is_valid(win) then
-                lines_count, penalty = text_changed_callback(lines_count, penalty)
+                lines_count, penalty = text_changed_factory(
+                    frame_win,
+                    frame_buf,
+                    win,
+                    { penalty = penalty, previous_lines = lines_count, config = config }
+                )()
             end
+            out_of_frame_factory(frame_win, win, { height = height, width = width, config = config, border = border })()
         end,
     })
 end
