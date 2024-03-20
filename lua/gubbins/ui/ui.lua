@@ -58,46 +58,50 @@ local hide_out_of_frame_window = function(frame_win, frame_buf, win, opts)
         if penalty == nil then
             penalty = 0
         end
-
         if vim.api.nvim_win_is_valid(win) then
             local cursor_line = vim.api.nvim_win_get_cursor(frame_win)[1]
-
             local current_lines = vim.api.nvim_buf_line_count(frame_buf)
+            print(current_lines, previous_lines)
 
-            print(previous_lines, current_lines)
             if current_lines ~= previous_lines then
                 local offset = current_lines - previous_lines
-                print(offset)
-                -- THE LOGIC IS HERE BUT SOMETHING IS MISSING
-                --
-                -- The offset gets too big on next event previous event is set under window
-                --
-                -- what if number of line reduces ?
+                if offset < 0 then
+                    if (cursor_line - 1) <= config.bufpos[1] + offset + 1 then
+                        config.bufpos = { config.bufpos[1] + offset - penalty, bufpos[2] }
 
-                if (cursor_line - 1) < config.bufpos[1] + offset then
-                    print("PASSED" .. penalty)
-                    config.bufpos = { config.bufpos[1] + offset - penalty, bufpos[2] }
-
-                    vim.api.nvim_win_set_config(win, config)
-                    penalty = 0
-                else
-                    penalty = penalty + offset - 1
+                        vim.api.nvim_win_set_config(win, config)
+                        penalty = 0
+                    else
+                        penalty = penalty + offset + 1
+                    end
+                    previous_lines = current_lines
                 end
-                previous_lines = current_lines
+                if offset > 0 then
+                    if (cursor_line - 1) < config.bufpos[1] + offset + 1 then
+                        config.bufpos = { config.bufpos[1] + offset - penalty, bufpos[2] }
+
+                        vim.api.nvim_win_set_config(win, config)
+                        penalty = 0
+                    else
+                        penalty = penalty + offset - 1
+                    end
+                    previous_lines = current_lines
+                end
             end
+
             return previous_lines, penalty
         end
         return nil, nil
     end
+
     local lines_count = vim.api.nvim_buf_line_count(frame_buf)
     local penalty = 0
-
     vim.api.nvim_create_autocmd("TextChanged", {
         buffer = frame_buf,
         once = false,
         callback = function()
+            print("TextChanged triggered")
             if vim.api.nvim_win_is_valid(win) then
-                print("lines_count " .. lines_count)
                 lines_count, penalty = text_changed_callback(lines_count, penalty)
             end
         end,
@@ -106,13 +110,17 @@ local hide_out_of_frame_window = function(frame_win, frame_buf, win, opts)
 
     -- local lines_count2 = vim.api.nvim_buf_line_count(frame_buf)
     --
-
+    --
+    --
+    --
+    --
+    --
     vim.api.nvim_create_autocmd("TextChangedI", {
         buffer = frame_buf,
         once = false,
         callback = function()
+            print("TextChangedI triggered")
             if vim.api.nvim_win_is_valid(win) then
-                print("lines_count2 " .. lines_count)
                 lines_count, penalty = text_changed_callback(lines_count, penalty)
             end
         end,
@@ -177,7 +185,6 @@ vim.keymap.set("n", "<leader>av", function()
     local current_win = vim.api.nvim_get_current_win()
     local current_cursor = vim.api.nvim_win_get_cursor(current_win)[1]
     local row = current_cursor - (vim.fn.line("w0", current_win) - 1)
-    print(row)
     --[[vim.api.nvim_open_win(new_buf, true, {
         relative = "cursor",
         -- win = current_win,
