@@ -12,13 +12,12 @@ end
 
 local out_of_frame_factory = function(frame_win, win, opts)
     return function()
-        print("Called")
         if vim.api.nvim_win_is_valid(win) then
+            local current_height = vim.api.nvim_win_get_height(win)
             local bottom_limit = vim.fn.line("w$", frame_win)
             local top_limit = vim.fn.line("w0", frame_win)
 
-            if top_limit > opts.config.bufpos[1] + 2 or bottom_limit < opts.config.bufpos[1] + 1 + opts.height then
-                print("OUT oF FRAME")
+            if top_limit > opts.config.bufpos[1] + 2 or bottom_limit < opts.config.bufpos[1] + 2 + current_height then
                 if opts.border ~= "none" then
                     opts.config.border = "none"
                     vim.api.nvim_win_set_config(win, opts.config)
@@ -27,17 +26,13 @@ local out_of_frame_factory = function(frame_win, win, opts)
                 vim.api.nvim_win_set_height(win, 0)
                 vim.api.nvim_win_set_width(win, 0)
             else
-                local current_width = vim.api.nvim_win_get_width(win)
-                local current_height = vim.api.nvim_win_get_height(win)
-                print("PASSED")
-                if current_height ~= opts.height or current_width ~= opts.width then
-                    print("PASSED2")
-                    if opts.config.border ~= opts.border then
-                        print("SETTING BORDER")
-                        opts.config.border = opts.border
-                        vim.api.nvim_win_set_config(win, opts.config)
-                    end
+                if opts.config.border ~= opts.border then
+                    opts.config.border = opts.border
+                    vim.api.nvim_win_set_config(win, opts.config)
+                end
 
+                local current_width = vim.api.nvim_win_get_width(win)
+                if current_height ~= opts.height or current_width ~= opts.width then
                     vim.api.nvim_win_set_width(win, opts.width)
                     vim.api.nvim_win_set_height(win, opts.height)
                 end
@@ -59,7 +54,6 @@ local text_changed_factory = function(frame_win, frame_buf, win, opts)
         if vim.api.nvim_win_is_valid(win) then
             local cursor_line = vim.api.nvim_win_get_cursor(frame_win)[1]
             local current_lines = vim.api.nvim_buf_line_count(frame_buf)
-            print(current_lines, opts.previous_lines)
 
             if current_lines ~= opts.previous_lines then
                 local offset = current_lines - opts.previous_lines
@@ -116,7 +110,6 @@ local hide_out_of_frame_window = function(frame_win, frame_buf, win, opts)
         buffer = frame_buf,
         once = false,
         callback = function()
-            print("TextChanged triggered")
             if vim.api.nvim_win_is_valid(win) then
                 lines_count, penalty = text_changed_factory(
                     frame_win,
@@ -125,8 +118,7 @@ local hide_out_of_frame_window = function(frame_win, frame_buf, win, opts)
                     { penalty = penalty, previous_lines = lines_count, config = config }
                 )()
             end
-
-            --out_of_frame_factory(frame_win, win, { height = height, width = width, config = config, border = border })()
+            out_of_frame_factory(frame_win, win, { height = height, width = width, config = config, border = border })()
         end,
     })
 
@@ -134,7 +126,6 @@ local hide_out_of_frame_window = function(frame_win, frame_buf, win, opts)
         buffer = frame_buf,
         once = false,
         callback = function()
-            print("TextChangedI triggered")
             if vim.api.nvim_win_is_valid(win) then
                 lines_count, penalty = text_changed_factory(
                     frame_win,
