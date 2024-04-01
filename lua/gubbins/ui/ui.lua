@@ -14,10 +14,14 @@ local out_of_frame_factory = function(frame_win, win, opts)
     return function()
         if vim.api.nvim_win_is_valid(win) then
             local current_height = vim.api.nvim_win_get_height(win)
-            local bottom_limit = vim.fn.line("w$", frame_win)
-            local top_limit = vim.fn.line("w0", frame_win)
-
-            if top_limit > opts.config.bufpos[1] + 2 or bottom_limit < opts.config.bufpos[1] + 2 + current_height then
+            local bottom_limit = vim.fn.line("w$", frame_win) - 1 -- -1 to transform in zero indexed.
+            local top_limit = vim.fn.line("w0", frame_win) - 1 -- ibid.
+            local row = opts.config.bufpos[1] -- bufpos --> zero indexed
+            local height_offset = 0
+            if opts.border ~= "none" then
+                height_offset = 2
+            end
+            if row < top_limit - 1 or row + opts.height + height_offset > bottom_limit then
                 if opts.border ~= "none" then
                     opts.config.border = "none"
                     vim.api.nvim_win_set_config(win, opts.config)
@@ -30,7 +34,6 @@ local out_of_frame_factory = function(frame_win, win, opts)
                     opts.config.border = opts.border
                     vim.api.nvim_win_set_config(win, opts.config)
                 end
-
                 local current_width = vim.api.nvim_win_get_width(win)
                 if current_height ~= opts.height or current_width ~= opts.width then
                     vim.api.nvim_win_set_width(win, opts.width)
