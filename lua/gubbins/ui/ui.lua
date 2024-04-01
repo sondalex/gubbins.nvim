@@ -10,6 +10,13 @@ local merge_table = function(tbl1, tbl2)
     end
 end
 
+--- @param frame_win number The main window
+--- @param win number The floating window to anchor
+--- @param opts table Table with fields:
+--- * config table See :help nvim_win_get_config
+--- * border string|nil
+--- * height number
+--- * width  number
 local out_of_frame_factory = function(frame_win, win, opts)
     return function()
         if vim.api.nvim_win_is_valid(win) then
@@ -44,11 +51,11 @@ local out_of_frame_factory = function(frame_win, win, opts)
     end
 end
 
----@param opts
+--- @param opts table Table with fields:
 --- * previous_lines
 --- * bufpos
 --- * penalty
---- * config
+--- * config table See :help nvim_win_get_config
 local text_changed_factory = function(frame_win, frame_buf, win, opts)
     return function()
         if opts.penalty == nil then
@@ -92,11 +99,10 @@ end
 --- @param frame_win number The main window id
 --- @param win number The floating window id
 --- @param frame_buf number The buffer of the main window, on which scroll event should be listened on
-local hide_out_of_frame_window = function(frame_win, frame_buf, win, opts)
-    local height = opts.height
-    local width = opts.width
-
+local hide_out_of_frame_window = function(frame_win, frame_buf, win)
     local config = vim.api.nvim_win_get_config(win)
+    local height = config.height
+    local width = config.width
     local border = config.border
     vim.api.nvim_create_autocmd("WinScrolled", {
         buffer = frame_buf,
@@ -156,7 +162,8 @@ end
 --- Create an anchored window which stays inplace and hide if out of frame.
 --- @param frame_win number|nil Window id
 --- @param frame_buf number|nil Buffer id
---- @param bufpos table|nil A tuple with `{row, col}`
+--- @param bufpos table|nil A tuple with `{row, col}`. Zero indexed.
+--- @param config table A config for new anchored window
 --- @return number|nil new_win The anchored window id.
 function M.create_anchored_window(frame_win, frame_buf, bufpos, config)
     if frame_win == nil then
@@ -183,37 +190,8 @@ function M.create_anchored_window(frame_win, frame_buf, bufpos, config)
     }
     merge_table(config, win_config)
     local new_win = vim.api.nvim_open_win(new_buf, true, win_config)
-    hide_out_of_frame_window(frame_win, frame_buf, new_win, {
-        height = config.height,
-        width = config.width,
-        bufpos = bufpos,
-    })
+    hide_out_of_frame_window(frame_win, frame_buf, new_win)
     return new_win
 end
 
-vim.keymap.set("n", "<leader>aw", function()
-    M.create_anchored_window(nil, nil, nil, { height = 6, width = 80, border = "single" })
-end)
-
-vim.keymap.set("n", "<leader>av", function()
-    local new_buf = vim.api.nvim_create_buf(false, true)
-    local current_win = vim.api.nvim_get_current_win()
-    local current_cursor = vim.api.nvim_win_get_cursor(current_win)[1]
-    local row = current_cursor - (vim.fn.line("w0", current_win) - 1)
-    --[[vim.api.nvim_open_win(new_buf, true, {
-        relative = "cursor",
-        -- win = current_win,
-        row = row,
-        col = -100,
-        height = 6,
-        width = 80
-    })--]]
-    vim.api.nvim_open_win(new_buf, true, {
-        relative = "cursor",
-        -- win = current_win,
-        bufpos = { current_cursor - 1, 0 },
-        height = 6,
-        width = 80,
-    })
-end)
 return M
