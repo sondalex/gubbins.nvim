@@ -1,3 +1,4 @@
+-- @module gubbins.utils
 local M = {}
 
 ---@diagnostic disable-next-line: undefined-global
@@ -32,10 +33,12 @@ end
 --- @param tbl table
 --- @param start integer
 --- @param stop integer|nil
---- # Example:
----   ```lua
----   slice({"ls", "-l", "-h"}, 2, nil) => {"-l", "-h"}
----   ```
+---
+--- Here's an example
+---
+--- <pre>
+--- slice({"ls", "-l", "-h"}, 2, nil) -- => {"-l", "-h"}
+--- </pre>
 function M.slice(tbl, start, stop)
     local res = {}
     local slice_end = stop

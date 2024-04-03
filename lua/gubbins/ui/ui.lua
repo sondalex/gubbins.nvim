@@ -13,10 +13,14 @@ end
 --- @param frame_win number The main window
 --- @param win number The floating window to anchor
 --- @param opts table Table with fields:
---- * config table See :help nvim_win_get_config
---- * border string|nil
---- * height number
---- * width  number
+---
+--- - config table See :help nvim_win_get_config
+---
+--- - border string|nil
+---
+--- - height number
+---
+--- - width  number
 local out_of_frame_factory = function(frame_win, win, opts)
     return function()
         if vim.api.nvim_win_is_valid(win) then
@@ -52,10 +56,14 @@ local out_of_frame_factory = function(frame_win, win, opts)
 end
 
 --- @param opts table Table with fields:
---- * previous_lines
---- * bufpos
---- * penalty
---- * config table See :help nvim_win_get_config
+---
+--- - previous_lines
+---
+--- - bufpos
+---
+--- - penalty
+---
+--- - config table See :help nvim_win_get_config
 local text_changed_factory = function(frame_win, frame_buf, win, opts)
     return function()
         if opts.penalty == nil then
