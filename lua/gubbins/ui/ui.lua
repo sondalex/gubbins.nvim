@@ -1,14 +1,8 @@
 ---@diagnostic disable-next-line: undefined-global
 local vim = vim
 
+local utils = require("gubbins.ui.utils")
 local M = {}
-
---- Merge tbl1 and tbl2. tbl2 gets updated.
-local merge_table = function(tbl1, tbl2)
-    for k, v in pairs(tbl1) do
-        tbl2[k] = v
-    end
-end
 
 --- @param frame_win number The main window
 --- @param win number The floating window to anchor
@@ -196,7 +190,7 @@ function M.create_anchored_window(frame_win, frame_buf, bufpos, config)
         win = frame_win,
         relative = "win",
     }
-    merge_table(config, win_config)
+    utils.merge_table(config, win_config)
     local new_win = vim.api.nvim_open_win(new_buf, true, win_config)
     hide_out_of_frame_window(frame_win, frame_buf, new_win)
     return new_win

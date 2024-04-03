@@ -1,3 +1,5 @@
 venv/
 .tests/
+doc/*
+!doc/.gitkeep
 
