@@ -67,8 +67,15 @@ use(
 })
 ```
 
+## Development
 
-## Testing (Unix based only)
+### Building docs
+
+```bash
+ldoc lua/
+```
+
+### Testing (Unix based only)
 
 ```bash
 ./tests/run
