@@ -156,7 +156,7 @@ local check_win_in_main_frame = function(frame_win, bufpos, height)
     local bottom_limit = vim.fn.line("w$", frame_win)
     local bottom_limit_row = bottom_limit - 1
     if bufpos[1] < top_limit_row - 1 or bufpos[1] > bottom_limit_row - height then
-        vim.api.nvim_err_writeln("Window creation failed. Tried setting out of focus window")
+        error("Window creation failed. Tried setting out of focus window")
         return false
     end
     return true
