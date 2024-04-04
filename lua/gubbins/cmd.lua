@@ -1,3 +1,4 @@
+-- @module gubbins.cmd
 local utils = require("gubbins.utils")
 local stream = require("gubbins.stream")
 
@@ -14,7 +15,7 @@ local M = {}
 
 --- @param opts table|nil Options for the window. If nil, the default options are used.
 --- The default options are:
---- ```lua
+--- <pre>
 --- {
 --- relative = "win",
 --- width = 80,
@@ -25,7 +26,7 @@ local M = {}
 --- style = "minimal",
 --- bufpos = { 100, 10 }
 --- }
---- ```
+--- </pre>
 --- @return integer Window ID
 local open_win = function(bufnr, opts)
     local defaults = {
@@ -76,9 +77,9 @@ end
 --- @param winopts table|nil See `open_win` for options
 --- @param wincallback function|nil Callback to run after the window is created.
 ---
---- # Example:
+--- Example:
 ---
---- ```lua
+--- <pre>
 --- system2({ "ls", "-l" }, false, nil, function(buf, win)
 ---	api.nvim_buf_set_keymap(buf, "n", "<CR>", "", {
 ---		noremap = true,
@@ -88,7 +89,7 @@ end
 ---		end,
 ---	})
 --- end)
----```
+--- </pre>
 local system2 = function(cmd, useterm, winopts, wincallback)
     if useterm == nil then
         useterm = true
@@ -157,12 +158,12 @@ end
 --- @param useterm boolean If true, the command will be executed in a terminal buffer. If you expect to run a command that outputs colour escape codes, you should set this to true.
 --- @param waitcompletion boolean If true, stdout or stderr will be printed once command is completed. If false, stdout and stderr will be printed to window as they are received.
 --- @param winopts table|nil See `open_win` for options
---- # Example
+--- Example
 ---
---- ```lua
+--- <pre>
 --- local cmd = require("gubbins.cmd")
 --- cmd.run({ "ls", "-l" }, true, false, nil, nil)
---- ```
+--- </pre>
 function M.run(cmd, useterm, waitcompletion, winopts, wincallback)
     if waitcompletion then
         system(cmd, useterm, winopts, wincallback)

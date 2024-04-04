@@ -29,7 +29,9 @@
    https://github.com/sondalex/gubbins.nvim/assets/61547150/352a89c6-992b-4616-9b13-a85cf63ec490
 
 
+## Advanced UI Layout
 
+See [ui/README.md](lua/gubbins/ui/README.md)
 
 
 
@@ -65,8 +67,15 @@ use(
 })
 ```
 
+## Development
 
-## Testing (Unix based only)
+### Building docs
+
+```bash
+ldoc lua/
+```
+
+### Testing (Unix based only)
 
 ```bash
 ./tests/run

@@ -1,3 +1,4 @@
+-- @module gubbins.stream
 local utils = require("gubbins.utils")
 
 ---@diagnostic disable-next-line: undefined-global
@@ -60,20 +61,30 @@ function M.linebyline(stream, bufnr, term)
     end
 end
 
+--- Spawn a new process
+---
 --- @param cmd string[]
---- @param opts table
 --- @param callback function
---- @return unknown|nil handle or nil
---- @return integer pid
---- The options are:
---- * `options.stdio`
---- * `options.env`
---- * `options.cwd`
---- * `options.uid`
---- * `options.gid`
---- * `options.verbatim
---- * options.detached`
---- * options.hide`
+--- @param opts table The options fields are:
+---
+---
+--- - stdio
+---
+--- - env
+---
+--- - cwd
+---
+--- - uid
+---
+--- - gid
+---
+--- - verbatim
+---
+--- - detached
+---
+--- - hide
+---
+--- @return number pid The handle
 function M.spawn(cmd, opts, callback)
     local new_opts = utils.copy(opts)
     new_opts["args"] = utils.slice(cmd, 2, nil)
