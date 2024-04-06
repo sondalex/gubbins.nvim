@@ -1,3 +1,5 @@
+---@diagnostic disable-next-line: undefined-global
+local api = vim.api
 local M = {}
 
 --- Merge tbl1 and tbl2. tbl2 gets updated inplace.
@@ -11,6 +13,20 @@ function M.merge_table(tbl1, tbl2)
         end
         tbl2[k] = v
     end
+end
+
+--- @param bufnr number|nil If nil, default to current buffer
+function M.get_number_virt_lines(bufnr)
+    if bufnr == nil then
+        bufnr = 0 -- current buffer
+    end
+    local virt_lines_extmarks = api.nvim_buf_get_extmarks(bufnr, -1, 0, -1, { type = "virt_lines", details = true })
+    local n = 0
+    for _, virt_lines_extmark in ipairs(virt_lines_extmarks) do
+        local opts = virt_lines_extmark[4]
+        n = n + #opts["virt_lines"]
+    end
+    return n
 end
 
 return M
