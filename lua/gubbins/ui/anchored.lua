@@ -4,6 +4,15 @@ local vim = vim
 local utils = require("gubbins.ui.utils")
 local M = {}
 
+local hide_window = function(win, opts)
+    if opts.border ~= "none" then
+        opts.config.border = "none"
+        vim.api.nvim_win_set_config(win, opts.config)
+    end
+    vim.api.nvim_win_set_height(win, 0)
+    vim.api.nvim_win_set_width(win, 0)
+end
+
 --- @param frame_win number The main window
 --- @param win number The floating window to anchor
 --- @param opts table Table with fields:
@@ -15,7 +24,7 @@ local M = {}
 --- - height number
 ---
 --- - width  number
-local out_of_frame_factory = function(frame_win, win, opts)
+local out_of_frame_factory = function(frame_win, frame_buf, win, opts)
     return function()
         if vim.api.nvim_win_is_valid(win) then
             local current_height = vim.api.nvim_win_get_height(win)
@@ -23,17 +32,28 @@ local out_of_frame_factory = function(frame_win, win, opts)
             local top_limit = vim.fn.line("w0", frame_win) - 1 -- ibid.
             local row = opts.config.bufpos[1] -- bufpos --> zero indexed
             local height_offset = 0
+            local extmark_offset = utils.get_number_virt_lines(frame_buf, { row, 0 }, { bottom_limit, 0 })
+            print(
+                "top_limit: "
+                    .. top_limit
+                    .. ", bottom_limit: "
+                    .. bottom_limit
+                    .. ", extmark_offset: "
+                    .. extmark_offset
+                    .. ", row: "
+                    .. row
+            )
             if opts.border ~= "none" then
                 height_offset = 2
             end
-            if row < top_limit - 1 or row + opts.height + height_offset > bottom_limit then
-                if opts.border ~= "none" then
-                    opts.config.border = "none"
-                    vim.api.nvim_win_set_config(win, opts.config)
-                end
-
-                vim.api.nvim_win_set_height(win, 0)
-                vim.api.nvim_win_set_width(win, 0)
+            local has_extmark = 0
+            if extmark_offset > 0 then
+                has_extmark = 1
+            end
+            if row < top_limit - 1 + has_extmark then
+                hide_window(win, opts)
+            elseif row + opts.height + height_offset - extmark_offset + has_extmark > bottom_limit then
+                hide_window(win, opts)
             else
                 if opts.config.border ~= opts.border then
                     opts.config.border = opts.border
@@ -111,6 +131,7 @@ local hide_out_of_frame_window = function(frame_win, frame_buf, win)
         once = false,
         callback = out_of_frame_factory(
             frame_win,
+            frame_buf,
             win,
             { height = height, width = width, config = config, border = border }
         ),
@@ -129,7 +150,12 @@ local hide_out_of_frame_window = function(frame_win, frame_buf, win)
                     { penalty = penalty, previous_lines = lines_count, config = config }
                 )()
             end
-            out_of_frame_factory(frame_win, win, { height = height, width = width, config = config, border = border })()
+            out_of_frame_factory(
+                frame_win,
+                frame_buf,
+                win,
+                { height = height, width = width, config = config, border = border }
+            )()
         end,
     })
 
@@ -145,7 +171,12 @@ local hide_out_of_frame_window = function(frame_win, frame_buf, win)
                     { penalty = penalty, previous_lines = lines_count, config = config }
                 )()
             end
-            out_of_frame_factory(frame_win, win, { height = height, width = width, config = config, border = border })()
+            out_of_frame_factory(
+                frame_win,
+                frame_buf,
+                win,
+                { height = height, width = width, config = config, border = border }
+            )()
         end,
     })
 end
