@@ -32,23 +32,27 @@ local out_of_frame_factory = function(frame_win, frame_buf, win, opts)
             local top_limit = vim.fn.line("w0", frame_win) - 1 -- ibid.
             local row = opts.config.bufpos[1] -- bufpos --> zero indexed
             local height_offset = 0
-
-            local extmark_offset = utils.get_number_virt_lines(frame_buf)
-            print("offset", extmark_offset)
-
+            local extmark_offset = utils.get_number_virt_lines(frame_buf, { row, 0 }, { bottom_limit, 0 })
+            print(
+                "top_limit: "
+                    .. top_limit
+                    .. ", bottom_limit: "
+                    .. bottom_limit
+                    .. ", extmark_offset: "
+                    .. extmark_offset
+                    .. ", row: "
+                    .. row
+            )
             if opts.border ~= "none" then
                 height_offset = 2
             end
-            print(row, top_limit, extmark_offset)
             local has_extmark = 0
             if extmark_offset > 0 then
                 has_extmark = 1
             end
             if row < top_limit - 1 + has_extmark then
-                print("case 1")
                 hide_window(win, opts)
-            elseif row + opts.height + height_offset > bottom_limit + extmark_offset - has_extmark then
-                print("case 2")
+            elseif row + opts.height + height_offset - extmark_offset + has_extmark > bottom_limit then
                 hide_window(win, opts)
             else
                 if opts.config.border ~= opts.border then

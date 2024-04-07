@@ -16,11 +16,23 @@ function M.merge_table(tbl1, tbl2)
 end
 
 --- @param bufnr number|nil If nil, default to current buffer
-function M.get_number_virt_lines(bufnr)
+--- @param upper_bound table|nil (row, col)|nil
+--- @param lower_bound table|nil (row, col)|nil
+function M.get_number_virt_lines(bufnr, upper_bound, lower_bound)
     if bufnr == nil then
         bufnr = 0 -- current buffer
     end
-    local virt_lines_extmarks = api.nvim_buf_get_extmarks(bufnr, -1, 0, -1, { type = "virt_lines", details = true })
+
+    if upper_bound == nil then
+        upper_bound = { 0, 0 }
+    end
+
+    if lower_bound == nil then
+        lower_bound = { -1, 0 }
+    end
+
+    local virt_lines_extmarks =
+        api.nvim_buf_get_extmarks(bufnr, -1, upper_bound, lower_bound, { type = "virt_lines", details = true })
     local n = 0
     for _, virt_lines_extmark in ipairs(virt_lines_extmarks) do
         local opts = virt_lines_extmark[4]

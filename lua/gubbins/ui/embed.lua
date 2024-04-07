@@ -57,13 +57,23 @@ function M.create_embed_window(frame_win, frame_buf, bufpos, config)
         bufpos = { linnr - 1, 0 }
     end
     local ns_id = set_embed_container(frame_win, frame_buf, bufpos, rheight)
+    local win
+    local bufnr
     local status, err = pcall(function()
-        anchored.create_anchored_window(frame_win, frame_buf, bufpos, config)
+        win = anchored.create_anchored_window(frame_win, frame_buf, bufpos, config)
+        bufnr = api.nvim_win_get_buf(win)
     end)
     if not status then
         api.nvim_buf_clear_namespace(frame_buf, ns_id, bufpos[1], bufpos[1] + 1)
         api.nvim_err_writeln(err)
     end
+    api.nvim_create_autocmd("WinClosed", {
+        buffer = bufnr,
+        once = false,
+        callback = function()
+            api.nvim_buf_clear_namespace(frame_buf, ns_id, bufpos[1], bufpos[1] + 1)
+        end,
+    })
 end
 
 return M
