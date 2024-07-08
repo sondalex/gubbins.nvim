@@ -63,7 +63,10 @@ With packer:
 
 ```lua
 use(
+    {
     "sondalex/gubbins.nvim"
+    config=function() require("gubbins").setup() end
+    }
 })
 ```
 
